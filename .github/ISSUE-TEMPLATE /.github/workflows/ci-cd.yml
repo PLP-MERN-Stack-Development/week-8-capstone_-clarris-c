@@ -1,0 +1,252 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # Test Backend
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:5.0
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: password
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd mongo
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        npm ci
+
+    - name: Create backend .env file
+      run: |
+        cd backend
+        cat > .env << EOF
+        NODE_ENV=test
+        PORT=5000
+        MONGODB_URI=mongodb://root:password@localhost:27017/smartfarm_test?authSource=admin
+        JWT_SECRET=test-jwt-secret-key
+        CLOUDINARY_URL=cloudinary://test:test@test
+        WEATHER_API_KEY=test-weather-key
+        EOF
+
+    - name: Run backend tests
+      run: |
+        cd backend
+        npm test
+
+    - name: Generate backend coverage report
+      run: |
+        cd backend
+        npm run test:coverage
+
+    - name: Upload backend coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage/lcov.info
+        flags: backend
+        name: backend-coverage
+
+  # Test Frontend
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+
+    - name: Create frontend .env file
+      run: |
+        cd frontend
+        cat > .env << EOF
+        REACT_APP_API_URL=http://localhost:5000/api
+        REACT_APP_WEATHER_API_KEY=test-weather-key
+        REACT_APP_GOOGLE_MAPS_KEY=test-maps-key
+        EOF
+
+    - name: Run frontend tests
+      run: |
+        cd frontend
+        npm test -- --coverage --watchAll=false
+
+    - name: Upload frontend coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./frontend/coverage/lcov.info
+        flags: frontend
+        name: frontend-coverage
+
+  # Lint and Format Check
+  lint-and-format:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        cd backend && npm ci
+        cd ../frontend && npm ci
+
+    - name: Run ESLint (Backend)
+      run: |
+        cd backend
+        npm run lint
+
+    - name: Run ESLint (Frontend)
+      run: |
+        cd frontend
+        npm run lint
+
+    - name: Check Prettier formatting
+      run: |
+        cd backend && npm run format:check
+        cd ../frontend && npm run format:check
+
+  # Security Audit
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run npm audit (Backend)
+      run: |
+        cd backend
+        npm audit --audit-level moderate
+
+    - name: Run npm audit (Frontend)
+      run: |
+        cd frontend
+        npm audit --audit-level moderate
+
+    - name: Run Snyk to check for vulnerabilities
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
+
+  # E2E Tests
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+
+    services:
+      mongodb:
+        image: mongo:5.0
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: password
+        ports:
+          - 27017:27017
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        cd backend && npm ci
+        cd ../frontend && npm ci
+
+    - name: Start backend server
+      run: |
+        cd backend
+        cat > .env << EOF
+        NODE_ENV=test
+        PORT=5000
+        MONGODB_URI=mongodb://root:password@localhost:27017/smartfarm_e2e?authSource=admin
+        JWT_SECRET=test-jwt-secret-key
+        CLOUDINARY_URL=cloudinary://test:test@test
+        WEATHER_API_KEY=test-weather-key
+        EOF
+        npm start &
+        sleep 10
+
+    - name: Start frontend server
+      run: |
+        cd frontend
+        cat > .env << EOF
+        REACT_APP_API_URL=http://localhost:5000/api
+        REACT_APP_WEATHER_API_KEY=test-weather-key
+        REACT_APP_GOOGLE_MAPS_KEY=test-maps-key
+        EOF
+        npm start &
+        sleep 30
+
+    - name: Run Cypress E2E tests
+      uses: cypress-io/github-action@v6
+      with:
+        working-directory: frontend
+        browser: chrome
+        wait-on: 'http://localhost:3000'
+        wait-on-timeout: 120
+
+    - name: Upload E2E test videos
+      uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: cypress-videos
+        path: frontend/cypress/videos
+
+  # Build and Deploy (Production)
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend, lint-and-format, security-audit, e2e
