@@ -1,0 +1,162 @@
+{
+  "name": "smartfarm-frontend",
+  "version": "1.0.0",
+  "description": "SmartFarm Management System - Frontend Application",
+  "private": true,
+  "homepage": ".",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "typescript": "^4.9.5",
+    "@types/node": "^16.18.59",
+    "@types/react": "^18.2.33",
+    "@types/react-dom": "^18.2.14",
+    "@mui/material": "^5.14.15",
+    "@mui/icons-material": "^5.14.15",
+    "@mui/lab": "^5.0.0-alpha.149",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@reduxjs/toolkit": "^1.9.7",
+    "react-redux": "^8.1.3",
+    "@tanstack/react-query": "^4.36.1",
+    "react-router-dom": "^6.17.0",
+    "axios": "^1.5.1",
+    "chart.js": "^4.4.0",
+    "react-chartjs-2": "^5.2.0",
+    "recharts": "^2.8.0",
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^4.2.1",
+    "date-fns": "^2.30.0",
+    "formik": "^2.4.5",
+    "yup": "^1.3.3",
+    "react-hook-form": "^7.47.0",
+    "@hookform/resolvers": "^3.3.2",
+    "react-hot-toast": "^2.4.1",
+    "framer-motion": "^10.16.4",
+    "react-spring": "^9.7.3",
+    "socket.io-client": "^4.7.2",
+    "react-window": "^1.8.8",
+    "react-virtualized-auto-sizer": "^1.0.20",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.4",
+    "react-datepicker": "^4.21.0",
+    "react-select": "^5.7.7",
+    "react-dropzone": "^14.2.3",
+    "react-image-crop": "^10.1.8",
+    "qrcode.react": "^3.1.0",
+    "react-helmet-async": "^1.3.0",
+    "workbox-background-sync": "^6.6.0",
+    "workbox-broadcast-update": "^6.6.0",
+    "workbox-cacheable-response": "^6.6.0",
+    "workbox-core": "^6.6.0",
+    "workbox-expiration": "^6.6.0",
+    "workbox-google-analytics": "^6.6.0",
+    "workbox-navigation-preload": "^6.6.0",
+    "workbox-precaching": "^6.6.0",
+    "workbox-range-requests": "^6.6.0",
+    "workbox-routing": "^6.6.0",
+    "workbox-strategies": "^6.6.0",
+    "workbox-streams": "^6.6.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/jest": "^27.5.2",
+    "@types/leaflet": "^1.9.6",
+    "@types/lodash": "^4.14.200",
+    "@types/react-window": "^1.8.6",
+    "@types/react-datepicker": "^4.19.0",
+    "cypress": "^13.4.0",
+    "cypress-real-events": "^1.11.0",
+    "@cypress/react": "^7.0.3",
+    "@cypress/webpack-dev-server": "^3.7.0",
+    "eslint": "^8.52.0",
+    "eslint-config-react-app": "^7.0.1",
+    "eslint-plugin-cypress": "^2.15.1",
+    "prettier": "^3.0.3",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.0.2",
+    "web-vitals": "^2.1.4",
+    "webpack-bundle-analyzer": "^4.9.1",
+    "source-map-explorer": "^2.5.3",
+    "craco": "^0.0.3",
+    "@craco/craco": "^7.1.0",
+    "craco-alias": "^3.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "test:e2e": "cypress run",
+    "test:e2e:open": "cypress open",
+    "eject": "react-scripts eject",
+    "lint": "eslint src/**/*.{js,jsx,ts,tsx}",
+    "lint:fix": "eslint src/**/*.{js,jsx,ts,tsx} --fix",
+    "format": "prettier --write src/**/*.{js,jsx,ts,tsx,json,css,md}",
+    "format:check": "prettier --check src/**/*.{js,jsx,ts,tsx,json,css,md}",
+    "analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'",
+    "docker:build": "docker build -t smartfarm-frontend .",
+    "docker:run": "docker run -p 3000:3000 smartfarm-frontend",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ],
+    "overrides": [
+      {
+        "files": [
+          "**/*.stories.*"
+        ],
+        "rules": {
+          "import/no-anonymous-default-export": "off"
+        }
+      }
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx,ts,tsx}",
+      "!<rootDir>/src/index.tsx",
+      "!<rootDir>/src/reportWebVitals.ts",
+      "!<rootDir>/src/setupTests.ts",
+      "!<rootDir>/src/**/*.stories.{js,jsx,ts,tsx}",
+      "!<rootDir>/src/**/*.d.ts"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 70,
+        "functions": 70,
+        "lines": 70,
+        "statements": 70
+      }
+    }
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "src/**/*.{json,css,md}": [
+      "prettier --write"
+    ]
+  },
+  "proxy": "http://localhost:5000"
+}
